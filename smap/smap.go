@@ -34,149 +34,149 @@ type Map interface {
 	Values() []interface{}
 
 	// Iter 返回所有 key 及 value
-	Iter() <-chan mapValue
+	Iter() <-chan MapValue
 }
 
-type mapValue struct {
+type MapValue struct {
 	Key   interface{}
 	Value interface{}
 }
 
-type syncMap struct {
-	m     map[interface{}]interface{}
-	mu    sync.RWMutex
-	block bool
+type SyncMap struct {
+	M     map[interface{}]interface{}
+	Mu    sync.RWMutex
+	Block bool
 }
 
 func New(block bool) Map {
-	var sm = &syncMap{}
-	sm.block = block
-	sm.m = make(map[interface{}]interface{})
+	var sm = &SyncMap{}
+	sm.Block = block
+	sm.M = make(map[interface{}]interface{})
 	return sm
 }
 
-func (this *syncMap) lock() {
-	if this.block {
-		this.mu.Lock()
+func (this *SyncMap) lock() {
+	if this.Block {
+		this.Mu.Lock()
 	}
 }
 
-func (this *syncMap) unlock() {
-	if this.block {
-		this.mu.Unlock()
+func (this *SyncMap) unlock() {
+	if this.Block {
+		this.Mu.Unlock()
 	}
 }
 
-func (this *syncMap) rLock() {
-	if this.block {
-		this.mu.RLock()
+func (this *SyncMap) rLock() {
+	if this.Block {
+		this.Mu.RLock()
 	}
 }
 
-func (this *syncMap) rUnlock() {
-	if this.block {
-		this.mu.RUnlock()
+func (this *SyncMap) rUnlock() {
+	if this.Block {
+		this.Mu.RUnlock()
 	}
 }
 
-func (this *syncMap) Set(key, value interface{}) {
+func (this *SyncMap) Set(key, value interface{}) {
 	this.lock()
 	defer this.unlock()
 
-	this.m[key] = value
+	this.M[key] = value
 }
 
-func (this *syncMap) Remove(key interface{}) {
+func (this *SyncMap) Remove(key interface{}) {
 	this.rLock()
 	defer this.rUnlock()
 
-	delete(this.m, key)
+	delete(this.M, key)
 }
 
-func (this *syncMap) RemoveAll() {
+func (this *SyncMap) RemoveAll() {
 	this.lock()
 	defer this.unlock()
 
-	for k := range this.m {
-		delete(this.m, k)
+	for k := range this.M {
+		delete(this.M, k)
 	}
 }
 
-func (this *syncMap) Exists(key interface{}) bool {
+func (this *SyncMap) Exists(key interface{}) bool {
 	this.rLock()
 	defer this.rUnlock()
 
-	_, found := this.m[key]
+	_, found := this.M[key]
 	return found
 }
 
-func (this *syncMap) Contains(keys ...interface{}) bool {
+func (this *SyncMap) Contains(keys ...interface{}) bool {
 	this.rLock()
 	defer this.rUnlock()
 
 	for _, k := range keys {
-		if _, found := this.m[k]; !found {
+		if _, found := this.M[k]; !found {
 			return false
 		}
 	}
 	return true
 }
 
-func (this *syncMap) Len() int {
+func (this *SyncMap) Len() int {
 	this.rLock()
 	defer this.rUnlock()
 
 	return this.len()
 }
 
-func (this *syncMap) len() int {
-	return len(this.m)
+func (this *SyncMap) len() int {
+	return len(this.M)
 }
 
-func (this *syncMap) Value(key interface{}) interface{} {
+func (this *SyncMap) Value(key interface{}) interface{} {
 	this.rLock()
 	defer this.rUnlock()
 
-	return this.m[key]
+	return this.M[key]
 }
 
-func (this *syncMap) Keys() []interface{} {
+func (this *SyncMap) Keys() []interface{} {
 	this.rLock()
 	defer this.rUnlock()
 	var keys = make([]interface{}, 0, 0)
 
-	for k := range this.m {
+	for k := range this.M {
 		keys = append(keys, k)
 	}
 	return keys
 }
 
-func (this *syncMap) Values() []interface{} {
+func (this *SyncMap) Values() []interface{} {
 	this.rLock()
 	defer this.rUnlock()
 	var values = make([]interface{}, 0, 0)
 
-	for _, v := range this.m {
+	for _, v := range this.M {
 		values = append(values, v)
 	}
 	return values
 }
 
-func (this *syncMap) Iter() <-chan mapValue {
-	var iv = make(chan mapValue)
+func (this *SyncMap) Iter() <-chan MapValue {
+	var iv = make(chan MapValue)
 
-	go func(m *syncMap) {
-		if m.block {
+	go func(m *SyncMap) {
+		if m.Block {
 			m.rLock()
 		}
 
-		for k, v := range this.m {
-			iv <- mapValue{k, v}
+		for k, v := range this.M {
+			iv <- MapValue{k, v}
 		}
 
 		close(iv)
 
-		if m.block {
+		if m.Block {
 			m.rUnlock()
 		}
 	}(this)
@@ -184,6 +184,6 @@ func (this *syncMap) Iter() <-chan mapValue {
 	return iv
 }
 
-func (this *syncMap) String() string {
-	return fmt.Sprint(this.m)
+func (this *SyncMap) String() string {
+	return fmt.Sprint(this.M)
 }
