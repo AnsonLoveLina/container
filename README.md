@@ -93,6 +93,43 @@ type Map interface {
 
 通过 smap.New(true) 创建的 Map 是 *线程安全* 的。
 
+## Golang MultiMap
+Golang 内置的 MultiMap 是非线程安全的, 因此重新实现了一个 MultiMap。
+
+```
+type MultiMap interface {
+	// Set 添加一组键值对，不存在返回true，反之false
+	Set(key, value interface{}) bool
+
+	// Remove 移除指定的 key 及其 value，存在返回true，反之false
+	Remove(key interface{}) bool
+
+	// RemoveAll 移除所有的 key 及 value，有内容返回true，反之false
+	RemoveAll() bool
+
+	// Exists 判断指定的 key 是否存在，假如存在给出key的长度，不存在返回0
+	Exists(key interface{}) int
+
+	// Contains 判断指定的 key 列表是否存在,只有当所有的 key 都存在的时候,才会返回 true
+	Contains(keys ...interface{}) bool
+
+	// Len 返回元素的个数
+	Len() int
+
+	// Value 获取指定 key 的 value 组成的Slice
+	Value(key interface{}) []interface{}
+
+	// Keys 返回由所有 key 组成的 Slice
+	Keys() []interface{}
+
+	// Values 返回由所有 value 组成的 Slice
+	Values() []interface{}
+
+	// Iter 返回所有 key 及 value
+	Iter() <-chan MapValue
+}
+```
+
 ## 其它 - container 包
 
 
